@@ -13,7 +13,7 @@
   "homepage": "https://check.et",
   "autoload": {
     "psr-4": {
-      "CheckEt\\": "app/"
+      "CheckEt\\": "src/"
     }
   },
   "autoload-dev": {
@@ -32,7 +32,7 @@
     }
   ],
   "scripts": {
-    "test": "phpunit",
+    "test": "vendor/bin/phpunit",
     "analyse": "phpstan analyse",
     "fix": "php-cs-fixer fix"
   },
@@ -44,7 +44,7 @@
   },
   "require-dev": {
     "symfony/var-dumper": "8.2.x-dev",
-    "phpunit/phpunit": "^11.0",
+    "phpunit/phpunit": "^11.5",
     "friendsofphp/php-cs-fixer": "^3.0",
     "phpstan/phpstan": "^2.0"
   }

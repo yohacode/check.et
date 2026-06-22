@@ -38,4 +38,9 @@ final class CheckEtClient
 
         return $this->verification->verify($request);
     }
+
+    public function verification(): VerificationService
+    {
+        return $this->verification;
+    }
 }

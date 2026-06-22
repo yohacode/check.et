@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace CheckEt\Http;
 
 use CheckEt\Config;
+use CheckEt\Exceptions\AuthenticationException;
 use CheckEt\Exceptions\CheckEtException;
 use CheckEt\Exceptions\NetworkException;
+use CheckEt\Exceptions\RateLimitException;
+use CheckEt\Exceptions\ValidationException;
 
 final class CurlHttpClient implements HttpClientInterface
 {
@@ -27,15 +30,23 @@ final class CurlHttpClient implements HttpClientInterface
 
         $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 
+        $isLocal = $this->config->isLocal() || $this->config->isDev();
+
+        // dd($isLocal);
+
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
+
+            // SSL (safe toggle via config)
+            CURLOPT_SSL_VERIFYPEER => !$isLocal,
+            CURLOPT_SSL_VERIFYHOST => $isLocal ? 0 : 2,
+
             CURLOPT_HTTPHEADER => array_merge(
                 ["Content-Type: application/json", "Accept: application/json"],
                 $headers,
             ),
+
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonBody,
             CURLOPT_TIMEOUT => $this->config->timeout,
@@ -43,10 +54,10 @@ final class CurlHttpClient implements HttpClientInterface
         ]);
 
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
 
             if ($this->shouldRetry(0, $attempt)) {
                 $this->backoff($attempt);
@@ -56,14 +67,16 @@ final class CurlHttpClient implements HttpClientInterface
             throw new NetworkException("Network error: {$error}");
         }
 
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (!is_string($response)) {
+            throw new CheckEtException("Invalid response type from API");
+        }
 
-        curl_close($ch);
-
-        $decoded = json_decode($response, true);
-
-        if (!is_array($decoded)) {
-            throw new CheckEtException("Invalid JSON response");
+        try {
+            $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new CheckEtException(
+                "Invalid JSON response: " . $e->getMessage(),
+            );
         }
 
         // SUCCESS
@@ -80,28 +93,12 @@ final class CurlHttpClient implements HttpClientInterface
         $this->handleErrorResponse($httpCode, $decoded);
     }
 
-    private function handleResponse(int $httpCode, string $response): array
-    {
-        $decoded = json_decode($response, true);
-
-        if (!is_array($decoded)) {
-            throw new CheckEtException("Invalid JSON response from API.");
-        }
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return $decoded;
-        }
-
-        $this->handleErrorResponse($httpCode, $decoded);
-    }
-
     private function handleErrorResponse(int $code, array $data): void
     {
         $message = $data["message"] ?? "Unknown API error";
 
         match ($code) {
-            401 => throw new AuthenticationException($message),
-            403 => throw new AuthenticationException($message),
+            401, 403 => throw new AuthenticationException($message),
 
             422 => throw new ValidationException($message),
 
@@ -128,8 +125,7 @@ final class CurlHttpClient implements HttpClientInterface
 
     private function backoff(int $attempt): void
     {
-        $delay = 500 * 2 ** ($attempt - 1); // exponential
-
+        $delay = 500 * 2 ** ($attempt - 1);
         usleep($delay * 1000);
     }
 }
