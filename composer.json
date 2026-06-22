@@ -2,9 +2,23 @@
   "name": "admin/check.et",
   "description": "This package is SDK for PHP developers. to help them verify bank trans from 9 d/t bank.",
   "type": "library",
+  "keywords": [
+    "check-et",
+    "checket",
+    "ethiopia",
+    "payment",
+    "bank-transfer"
+  ],
+  "license": "MIT",
+  "homepage": "https://check.et",
   "autoload": {
     "psr-4": {
-      "CheckEt\\": "app/"
+      "YohaCheckEt\\": "app/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "CheckEt\\Tests\\": "tests/"
     }
   },
   "authors": [
@@ -13,8 +27,20 @@
       "email": "johnpro3269@gmail.com"
     }
   ],
-  "minimum-stability": "dev",
+  "scripts": {
+    "test": "phpunit",
+    "analyse": "phpstan analyse",
+    "fix": "php-cs-fixer fix"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "require": {
+    "php": "^8.2"
+  },
   "require-dev": {
-    "symfony/var-dumper": "8.2.x-dev"
+    "symfony/var-dumper": "8.2.x-dev",
+    "phpunit/phpunit": "^11.0",
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "phpstan/phpstan": "^2.0"
   }
 }
