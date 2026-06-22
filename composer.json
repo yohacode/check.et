@@ -1,0 +1,20 @@
+{
+  "name": "admin/check.et",
+  "description": "This package is SDK for PHP developers. to help them verify bank trans from 9 d/t bank.",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "CheckEt\\": "app/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Yoha",
+      "email": "johnpro3269@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require-dev": {
+    "symfony/var-dumper": "8.2.x-dev"
+  }
+}
