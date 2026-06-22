@@ -17,29 +17,27 @@ final class CurlHttpClient implements HttpClientInterface
         array $headers = [],
         array $body = [],
     ): array {
+        $attempt = 0;
+
+        start:
+
+        $attempt++;
+
         $ch = curl_init();
 
         $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 
-        $defaultHeaders = [
-            "Content-Type: application/json",
-            "Accept: application/json",
-        ];
-
-        $allHeaders = array_merge($defaultHeaders, $headers);
-
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
-
-            // SECURITY: SSL always enabled
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
-
-            CURLOPT_HTTPHEADER => $allHeaders,
+            CURLOPT_HTTPHEADER => array_merge(
+                ["Content-Type: application/json", "Accept: application/json"],
+                $headers,
+            ),
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonBody,
-
             CURLOPT_TIMEOUT => $this->config->timeout,
             CURLOPT_CONNECTTIMEOUT => $this->config->connectTimeout,
         ]);
@@ -50,6 +48,11 @@ final class CurlHttpClient implements HttpClientInterface
             $error = curl_error($ch);
             curl_close($ch);
 
+            if ($this->shouldRetry(0, $attempt)) {
+                $this->backoff($attempt);
+                goto start;
+            }
+
             throw new NetworkException("Network error: {$error}");
         }
 
@@ -57,7 +60,24 @@ final class CurlHttpClient implements HttpClientInterface
 
         curl_close($ch);
 
-        return $this->handleResponse($httpCode, $response);
+        $decoded = json_decode($response, true);
+
+        if (!is_array($decoded)) {
+            throw new CheckEtException("Invalid JSON response");
+        }
+
+        // SUCCESS
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return $decoded;
+        }
+
+        // RETRY LOGIC
+        if ($this->shouldRetry($httpCode, $attempt)) {
+            $this->backoff($attempt);
+            goto start;
+        }
+
+        $this->handleErrorResponse($httpCode, $decoded);
     }
 
     private function handleResponse(int $httpCode, string $response): array
@@ -80,13 +100,36 @@ final class CurlHttpClient implements HttpClientInterface
         $message = $data["message"] ?? "Unknown API error";
 
         match ($code) {
-            401 => throw new CheckEtException("Unauthorized: {$message}"),
-            403 => throw new CheckEtException("Forbidden: {$message}"),
-            422 => throw new CheckEtException("Validation error: {$message}"),
-            429 => throw new CheckEtException("Rate limit: {$message}"),
+            401 => throw new AuthenticationException($message),
+            403 => throw new AuthenticationException($message),
+
+            422 => throw new ValidationException($message),
+
+            429 => throw new RateLimitException($message),
+
+            500, 502, 503, 504 => throw new NetworkException(
+                "Server error: {$message}",
+            ),
+
             default => throw new CheckEtException(
                 "API Error ({$code}): {$message}",
             ),
         };
+    }
+
+    private function shouldRetry(int $httpCode, int $attempt): bool
+    {
+        if ($attempt >= $this->config->retries) {
+            return false;
+        }
+
+        return in_array($httpCode, [429, 500, 502, 503, 504], true);
+    }
+
+    private function backoff(int $attempt): void
+    {
+        $delay = 500 * 2 ** ($attempt - 1); // exponential
+
+        usleep($delay * 1000);
     }
 }

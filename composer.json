@@ -13,7 +13,7 @@
   "homepage": "https://check.et",
   "autoload": {
     "psr-4": {
-      "YohaCheckEt\\": "app/"
+      "CheckEt\\": "app/"
     }
   },
   "autoload-dev": {

@@ -6,6 +6,9 @@ namespace CheckEt;
 
 use CheckEt\DTO\VerificationRequest;
 use CheckEt\DTO\VerificationResponse;
+use CheckEt\Exceptions\AuthenticationException;
+use CheckEt\Exceptions\CheckEtException;
+use CheckEt\Exceptions\NetworkException;
 use CheckEt\Http\CurlHttpClient;
 use CheckEt\Http\HttpClientInterface;
 use CheckEt\Services\VerificationService;

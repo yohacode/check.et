@@ -14,8 +14,14 @@ final readonly class VerificationResponse
 
     public static function fromArray(array $data): self
     {
+        if (!array_key_exists("success", $data)) {
+            throw new \CheckEt\Exceptions\CheckEtException(
+                "Malformed API response: missing success field",
+            );
+        }
+
         return new self(
-            success: (bool) ($data["success"] ?? false),
+            success: (bool) $data["success"],
             message: $data["message"] ?? null,
             raw: $data,
         );
