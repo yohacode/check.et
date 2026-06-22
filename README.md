@@ -19,7 +19,8 @@ composer require yohacodes/check-et-php
 use CheckEt\CheckEtClient;
 
 $client = new CheckEtClient(
-    apiKey: getenv('CHECK_ET_API_KEY')
+    apiKey: getenv('CHECK_ET_API_KEY'),
+    appEnv: getenv('CHECK_ET_APP_ENV')
 );
 
 $response = $client->verify(

@@ -1,1 +1,1 @@
-{"version":2,"defects":{"CheckEtClientTest::test_client_can_be_created":5},"times":{"CheckEtClientTest::test_client_can_be_created":0.003}}
+{"version":2,"defects":{"CheckEtClientTest::test_client_can_be_created":5},"times":{"CheckEtClientTest::test_client_can_be_created":0.007}}
