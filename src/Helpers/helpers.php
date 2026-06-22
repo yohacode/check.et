@@ -19,12 +19,28 @@ if (!function_exists("config")) {
         static $config = [];
 
         if (empty($config)) {
-            foreach (glob(__DIR__ . "/../config/*.php") as $file) {
+            foreach (glob(__DIR__ . "/../../config/*.php") as $file) {
                 $name = basename($file, ".php");
                 $config[$name] = require $file;
             }
         }
 
-        return data_get($config, $key, $default);
+        return array_get($config, $key, $default);
+    }
+}
+
+if (!function_exists("array_get")) {
+    function array_get(array $array, string $key, mixed $default = null): mixed
+    {
+        $keys = explode(".", $key);
+
+        foreach ($keys as $segment) {
+            if (!is_array($array) || !array_key_exists($segment, $array)) {
+                return $default;
+            }
+            $array = $array[$segment];
+        }
+
+        return $array;
     }
 }
