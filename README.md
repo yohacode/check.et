@@ -7,9 +7,10 @@ Official PHP SDK for interacting with the Check.et API.
 - PHP 8.2+
 
 ## Installation
+# Not available on Packagist yet.
 
 ```bash
-composer require check-et/check-et-php
+composer require yohacodes/check-et-php
 ```
 
 ## Basic Usage

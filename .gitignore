@@ -1,6 +1,7 @@
 /vendor/
 /.idea
 /.vscode
+.env
 composer.lock
 .phpunit.result.cache
 coverage
