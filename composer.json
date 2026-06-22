@@ -1,5 +1,5 @@
 {
-  "name": "admin/check.et",
+  "name": "yohacodes/check.et",
   "description": "This package is SDK for PHP developers. to help them verify bank trans from 9 d/t bank.",
   "type": "library",
   "keywords": [
