@@ -40,20 +40,3 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/phpunit
-
-  deploy:
-    needs: tests
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /var/www/check.et
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
